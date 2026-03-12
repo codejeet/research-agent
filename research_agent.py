@@ -118,6 +118,16 @@ def main():
     parser.add_argument("--industry", required=True, help="Industry/sector")
     parser.add_argument("--audience", required=True, help="Target audience")
     parser.add_argument(
+        "--search-count",
+        type=int,
+        default=10,
+        help="Number of Brave search results to fetch per query (default: 10)",
+    )
+    parser.add_argument(
+        "--save-search-json",
+        help="Optional path to save raw search data as pretty JSON",
+    )
+    parser.add_argument(
         "--output", default="research_brief.md", help="Output file (default: research_brief.md)"
     )
     args = parser.parse_args()
@@ -133,10 +143,16 @@ def main():
     for label, query in queries.items():
         print(f"Searching: {query}")
         try:
-            search_data[label] = brave_search(query, api_key)
+            search_data[label] = brave_search(query, api_key, count=args.search_count)
         except requests.RequestException as e:
             print(f"Warning: Search failed for '{label}': {e}", file=sys.stderr)
             search_data[label] = []
+
+    if args.save_search_json:
+        with open(args.save_search_json, "w", encoding="utf-8") as f:
+            json.dump(search_data, f, indent=2)
+            f.write("\n")
+        print(f"Search data saved to {args.save_search_json}")
 
     prompt = build_llm_prompt(args.company, args.industry, args.audience, search_data)
 
@@ -147,7 +163,7 @@ def main():
         print(f"Error: LLM request failed: {e}", file=sys.stderr)
         sys.exit(1)
 
-    with open(args.output, "w") as f:
+    with open(args.output, "w", encoding="utf-8") as f:
         f.write(brief)
 
     print(f"Research brief saved to {args.output}")

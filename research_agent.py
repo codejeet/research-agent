@@ -12,6 +12,7 @@ import requests
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 LLM_BASE_URL = "http://127.0.0.1:3456/v1"
 LLM_MODEL = "claude-opus-4"
+SEARCH_DATA_KEYS = ("market_size", "trends", "competitors", "statistics")
 
 
 def brave_search(query, api_key, count=10):
@@ -68,6 +69,18 @@ def format_search_results(results):
         lines.append(f"{i}. [{r['title']}]({r['url']})")
         lines.append(f"   {r['description']}")
     return "\n".join(lines)
+
+
+def normalize_search_data(search_data):
+    """Return search data with the expected top-level keys in a stable order."""
+    return {key: search_data.get(key, []) for key in SEARCH_DATA_KEYS}
+
+
+def save_search_data(path, search_data):
+    """Persist raw search data as pretty JSON for auditing."""
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(normalize_search_data(search_data), f, indent=2)
+        f.write("\n")
 
 
 def build_llm_prompt(company, industry, audience, search_data):
@@ -138,7 +151,7 @@ def main():
         sys.exit(1)
 
     queries = build_search_queries(args.company, args.industry, args.audience)
-    search_data = {}
+    search_data = {key: [] for key in SEARCH_DATA_KEYS}
 
     for label, query in queries.items():
         print(f"Searching: {query}")
@@ -149,9 +162,7 @@ def main():
             search_data[label] = []
 
     if args.save_search_json:
-        with open(args.save_search_json, "w", encoding="utf-8") as f:
-            json.dump(search_data, f, indent=2)
-            f.write("\n")
+        save_search_data(args.save_search_json, search_data)
         print(f"Search data saved to {args.save_search_json}")
 
     prompt = build_llm_prompt(args.company, args.industry, args.audience, search_data)

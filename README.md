@@ -13,6 +13,8 @@ export BRAVE_API_KEY="your-brave-api-key"
 
 ```bash
 python research_agent.py --company "Acme Corp" --industry "cloud computing" --audience "enterprise CTOs"
+python research_agent.py --company "Acme Corp" --industry "cloud computing" --audience "enterprise CTOs" --search-count 15
+python research_agent.py --company "Acme Corp" --industry "cloud computing" --audience "enterprise CTOs" --save-search-json /tmp/research-search-data.json
 ```
 
 This produces a `research_brief.md` file with:
@@ -48,6 +50,8 @@ python research_agent.py --company "Datadog" --industry "observability" --audien
 # Save raw search evidence for auditing
 python research_agent.py --company "HubSpot" --industry "CRM software" --audience "marketing teams" --save-search-json /tmp/research-search-data.json
 ```
+
+`--save-search-json` writes pretty JSON with the top-level sections `market_size`, `trends`, `competitors`, and `statistics`, which is useful for auditing the Brave search evidence sent to the LLM.
 
 ## How It Works
 
